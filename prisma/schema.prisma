@@ -1,0 +1,156 @@
+// This is your Prisma schema file
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String     @id @default(cuid())
+  name          String?
+  email         String     @unique
+  hashedPassword String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  reminders         Reminder[]
+  eventStatuses     EventUserStatus[]
+  pushSubscriptions PushSubscription[]
+  accounts          Account[]
+  sessions          Session[]
+
+  @@map("users")
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@id([identifier, token])
+  @@map("verificationtokens")
+}
+
+model Event {
+  id              String   @id @default(cuid())
+  title           String
+  artist          String?
+  venue           String
+  location        String
+  date            DateTime
+  category        String // EventCategory: 'concert' | 'sports' | 'theater' | 'comedy' | 'festival' | 'nightlife'
+  imageUrl        String
+  description     String
+  ticketSaleDate  DateTime?
+  presaleDate     DateTime?
+  ticketUrl       String?
+  status          String   // EventStatus: 'upcoming' | 'presale' | 'onsale' | 'soldout'
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  reminders     Reminder[]
+  userStatuses  EventUserStatus[]
+  updates       EventUpdate[]
+
+  @@map("events")
+}
+
+model Reminder {
+  id                 String   @id @default(cuid())
+  userId            String
+  eventId           String
+  intervals         String   // JSON string: { twoHours: boolean, oneHour: boolean, thirtyMinutes: boolean, tenMinutes: boolean }
+  notificationMethods String  // JSON string: { browserPush: boolean, email: boolean }
+  status            String   // ReminderStatus: 'active' | 'completed' | 'dismissed'
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("reminders")
+  @@index([userId])
+  @@index([eventId])
+}
+
+model EventUpdate {
+  id          String   @id @default(cuid())
+  eventId     String
+  eventTitle  String
+  type        String   // UpdateType: 'lineup' | 'tickets' | 'schedule' | 'weather' | 'logistics' | 'alert'
+  title       String
+  description String
+  imageUrl    String?
+  timestamp   DateTime @default(now())
+  priority    String   // UpdatePriority: 'normal' | 'important' | 'urgent'
+  createdAt   DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("event_updates")
+  @@index([eventId])
+}
+
+model EventUserStatus {
+  id             String   @id @default(cuid())
+  userId         String
+  eventId        String
+  status         String   // 'interested' | 'going' | 'secured'
+  ticketsSecured Boolean  @default(false)
+  updatedAt      DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@map("event_user_statuses")
+  @@index([userId])
+  @@index([eventId])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String
+  keyP256dh String
+  keyAuth   String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("push_subscriptions")
+  @@index([userId])
+}
