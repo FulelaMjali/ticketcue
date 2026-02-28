@@ -14,8 +14,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Event, Reminder } from '@/types';
-import { addReminder } from '@/lib/reminder-storage';
 import { formatDate } from '@/lib/date-utils';
+import { useReminders } from '@/hooks/use-reminders';
 
 interface ReminderModalProps {
   open: boolean;
@@ -43,6 +43,7 @@ export function ReminderModal({
   });
 
   const [isSaving, setIsSaving] = useState(false);
+  const { createReminder } = useReminders();
 
   const handleIntervalToggle = (key: keyof typeof intervals) => {
     setIntervals((prev) => ({
@@ -60,22 +61,22 @@ export function ReminderModal({
 
   const handleSave = async () => {
     setIsSaving(true);
-    
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
 
-    const reminder = addReminder({
-      eventId: event.id,
-      intervals,
-      notificationMethods,
-    });
+    try {
+      const reminder = await createReminder({
+        eventId: event.id,
+        intervals,
+        notificationMethods,
+      });
 
-    if (onReminderCreated) {
-      onReminderCreated(reminder);
+      if (onReminderCreated) {
+        onReminderCreated(reminder);
+      }
+
+      onOpenChange(false);
+    } finally {
+      setIsSaving(false);
     }
-
-    setIsSaving(false);
-    onOpenChange(false);
   };
 
   const hasAtLeastOneInterval = Object.values(intervals).some((v) => v);
@@ -175,13 +176,14 @@ export function ReminderModal({
                     Email
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Receive email reminders
+                    Coming soon in a later phase
                   </p>
                 </div>
                 <Switch
                   id="email"
                   checked={notificationMethods.email}
                   onCheckedChange={() => handleMethodToggle('email')}
+                  disabled
                 />
               </div>
             </div>

@@ -4,7 +4,25 @@ import bcryptjs from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+const now = new Date();
+const futureSaleDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+const futureEventDate = new Date(now.getTime() + 45 * 24 * 60 * 60 * 1000);
+
 const mockEventsData = [
+  {
+    title: 'Future Countdown Test Event',
+    artist: 'TicketCue Test Artist',
+    venue: 'Demo Arena',
+    location: 'Cape Town, ZA',
+    date: futureEventDate,
+    category: 'concert',
+    imageUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800',
+    description: 'A seeded future event to validate reminder countdown behavior in the UI.',
+    ticketSaleDate: futureSaleDate,
+    presaleDate: undefined,
+    ticketUrl: 'https://example.com/future-countdown-test',
+    status: 'upcoming',
+  },
   {
     title: 'Neon Valley Festival 2024',
     artist: 'Multiple Artists',

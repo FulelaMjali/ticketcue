@@ -7,25 +7,19 @@ import { ReminderCard } from '@/components/reminders/reminder-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { getReminders, deleteReminder } from '@/lib/reminder-storage';
-import { Reminder } from '@/types';
 import { formatRelativeTime } from '@/lib/date-utils';
 import Link from 'next/link';
 import { useEvents } from '@/hooks/use-events';
+import { useReminders } from '@/hooks/use-reminders';
 
 export default function DashboardPage() {
-  const [reminders, setReminders] = useState<Reminder[]>([]);
-  const { data, loading, error } = useEvents(1, 200);
+  const { reminders, removeReminder, loading: remindersLoading, error: remindersError } = useReminders();
+  const { data, loading, error } = useEvents(1, 100);
   const events = data?.events || [];
   const eventsById = useMemo(() => new Map(events.map((evt) => [evt.id, evt])), [events]);
 
-  useEffect(() => {
-    setReminders(getReminders());
-  }, []);
-
-  const handleDeleteReminder = (reminderId: string) => {
-    deleteReminder(reminderId);
-    setReminders(getReminders());
+  const handleDeleteReminder = async (reminderId: string) => {
+    await removeReminder(reminderId);
   };
 
   const activeReminders = reminders.filter((r) => r.status === 'active');
@@ -90,13 +84,13 @@ export default function DashboardPage() {
                 </Link>
               </div>
 
-              {error ? (
+              {error || remindersError ? (
                 <Card>
                   <CardContent className="py-8 text-center text-muted-foreground">
-                    Unable to load events
+                    Unable to load dashboard data
                   </CardContent>
                 </Card>
-              ) : loading ? (
+              ) : loading || remindersLoading ? (
                 <div className="space-y-4">
                   {Array.from({ length: 3 }).map((_, idx) => (
                     <div key={idx} className="h-28 bg-muted animate-pulse rounded-xl" />

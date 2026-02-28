@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { EventCategory } from '@/types';
 import { cn } from '@/lib/utils';
 import { useEvents } from '@/hooks/use-events';
+import { useReminders } from '@/hooks/use-reminders';
 
 const categories: { value: EventCategory | 'all'; label: string }[] = [
   { value: 'all', label: 'All Events' },
@@ -24,6 +25,7 @@ const categories: { value: EventCategory | 'all'; label: string }[] = [
 export default function EventsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<EventCategory | 'all'>('all');
+  const { reminders } = useReminders();
 
   const { data, loading, error } = useEvents(1, 20, {
     category: selectedCategory === 'all' ? undefined : selectedCategory,
@@ -40,6 +42,11 @@ export default function EventsPage() {
       return haystack.includes(searchQuery.toLowerCase());
     });
   }, [data?.events, searchQuery]);
+
+  const reminderEventIds = useMemo(
+    () => new Set(reminders.filter((item) => item.status === 'active').map((item) => item.eventId)),
+    [reminders]
+  );
 
   return (
     <AppLayout>
@@ -118,7 +125,7 @@ export default function EventsPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredEvents.map((event) => (
-                <EventCard key={event.id} event={event} />
+                <EventCard key={event.id} event={event} isReminderActive={reminderEventIds.has(event.id)} />
               ))}
             </div>
           )}

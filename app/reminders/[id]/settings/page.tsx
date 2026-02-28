@@ -19,12 +19,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { getReminders, saveReminder, deleteReminder } from '@/lib/reminder-storage';
 import { getEventStatus, updateTicketsSecured } from '@/lib/event-status-storage';
 import { Reminder } from '@/types';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useEvent } from '@/hooks/use-events';
+import { useReminders } from '@/hooks/use-reminders';
 
 export default function ReminderSettingsPage({
   params,
@@ -36,11 +36,13 @@ export default function ReminderSettingsPage({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [ticketsSecured, setTicketsSecured] = useState(false);
+  const { reminders, loading: remindersLoading, updateReminder, removeReminder } = useReminders();
   const { data: event, loading: eventLoading, error: eventError } = useEvent(reminder?.eventId || '');
 
   useEffect(() => {
-    const reminds = getReminders();
-    const reminderData = reminds.find(r => r.id === params.id);
+    if (remindersLoading) return;
+
+    const reminderData = reminders.find((r) => r.id === params.id);
     if (reminderData) {
       setReminder(reminderData);
       
@@ -51,7 +53,7 @@ export default function ReminderSettingsPage({
       toast.error('Reminder not found');
       router.push('/reminders');
     }
-  }, [params.id, router]);
+  }, [params.id, reminders, remindersLoading, router]);
 
   if (!reminder) {
     return (
@@ -131,20 +133,32 @@ export default function ReminderSettingsPage({
     }
 
     setIsSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    saveReminder(reminder);
-    updateTicketsSecured(reminder.eventId, ticketsSecured);
-    toast.success('Preferences saved');
-    setIsSaving(false);
+    try {
+      await updateReminder(reminder.id, {
+        intervals: reminder.intervals,
+        notificationMethods: reminder.notificationMethods,
+      });
+      updateTicketsSecured(reminder.eventId, ticketsSecured);
+      toast.success('Preferences saved');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to save preferences';
+      toast.error(message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDelete = async () => {
     if (!reminder) return;
 
-    deleteReminder(reminder.id);
-    toast.success('Reminder deleted');
-    router.push('/reminders');
+    try {
+      await removeReminder(reminder.id);
+      toast.success('Reminder deleted');
+      router.push('/reminders');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete reminder';
+      toast.error(message);
+    }
   };
 
   return (

@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { UrgentAlert } from '@/components/notifications/urgent-alert';
-import { getReminders } from '@/lib/reminder-storage';
 import { sendBrowserNotification, getNotificationPermission } from '@/lib/notification-utils';
 import { Event } from '@/types';
 import { useEvents } from '@/hooks/use-events';
+import { useReminders } from '@/hooks/use-reminders';
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const [urgentEvent, setUrgentEvent] = useState<Event | null>(null);
   const [urgentMessage, setUrgentMessage] = useState('');
-  const { data } = useEvents(1, 200);
+  const { data } = useEvents(1, 100);
+  const { reminders } = useReminders();
   const events = data?.events || [];
 
   useEffect(() => {
@@ -18,7 +19,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     // Check reminders every minute
     const checkReminders = () => {
-      const reminders = getReminders();
       const now = new Date();
       const eventsById = new Map(events.map((evt) => [evt.id, evt]));
 

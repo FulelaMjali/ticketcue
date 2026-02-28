@@ -47,9 +47,9 @@ Since the frontend is already **Next.js with TypeScript**, the natural choice is
 
 ### Phase 2 — Reminders Engine (Server-Side)
 
-**Features:** Reminders CRUD API, job scheduling, email delivery
+**Features:** Reminders CRUD API, persistent reminder state, reminder list filtering UX (past + event type)
 
-**Why this second:** This is the entire reason the app exists. `localStorage` reminders are fragile — they disappear if the user clears their browser, switches devices, or the tab is closed. Moving reminders to the server is what makes the product real. Email notifications are already wired in the UI (`notificationMethods.email`) but currently do nothing — this is the phase that delivers on that promise.
+**Why this second:** This is the entire reason the app exists. `localStorage` reminders are fragile — they disappear if the user clears their browser, switches devices, or the tab is closed. Moving reminders to the server is what makes the product real. We are explicitly deferring email delivery in this phase, while still persisting reminder preferences and improving reminder list usability.
 
 **What to build:**
 - Reminder table: `id`, `userId`, `eventId`, `intervals` (JSON), `notificationMethods` (JSON), `status`, `createdAt`
@@ -57,11 +57,18 @@ Since the frontend is already **Next.js with TypeScript**, the natural choice is
 - `GET /api/reminders` — fetch all reminders for logged-in user
 - `DELETE /api/reminders/[id]`
 - `PATCH /api/reminders/[id]/status` — dismiss/complete
-- BullMQ worker that, on reminder creation, schedules jobs at each enabled interval (2h, 1h, 30m, 10m before the sale date)
-- Email job handler using Resend — sends a branded email when the job fires
-- Replace `reminder-storage.ts` (localStorage) with API calls
+- `PATCH /api/reminders/[id]` — update reminder intervals/methods/status
+- Replace `reminder-storage.ts` (localStorage) with API calls in reminder flows
+- Reminders page controls to reduce list noise:
+	- Hide/show past reminders
+	- Filter reminders by event category (`concert`, `sports`, `festival`, etc.)
+- Keep `notificationMethods.email` disabled in UI for now (deferred)
 
-**Deliverable:** Reminders survive browser refreshes, work across devices, and actually deliver emails.
+**Deferred from this phase:**
+- BullMQ reminder scheduling worker
+- Email delivery via Resend
+
+**Deliverable:** Reminders survive browser refreshes and work across devices. Users can keep the reminders list focused by hiding past reminders and filtering by event type.
 
 ---
 

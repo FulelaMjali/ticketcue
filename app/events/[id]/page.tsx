@@ -9,12 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getReminders, addReminder, deleteReminder } from '@/lib/reminder-storage';
 import { hasTicketsSecured, updateTicketsSecured } from '@/lib/event-status-storage';
 import { formatDate, formatTime, formatRelativeTime } from '@/lib/date-utils';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useEvent } from '@/hooks/use-events';
+import { useReminders } from '@/hooks/use-reminders';
 
 export default function EventDetailPage() {
   const params = useParams();
@@ -25,14 +25,14 @@ export default function EventDetailPage() {
   const [ticketsSecured, setTicketsSecured] = useState(false);
 
   const { data: event, loading, error } = useEvent(eventId);
+  const { reminders, createReminder, removeReminder } = useReminders();
 
   useEffect(() => {
     if (event) {
-      const reminders = getReminders();
       setHasReminder(reminders.some((r) => r.eventId === event.id && r.status === 'active'));
       setTicketsSecured(hasTicketsSecured(event.id));
     }
-  }, [event]);
+  }, [event, reminders]);
 
   if (loading) {
     return (
@@ -83,36 +83,47 @@ export default function EventDetailPage() {
   const saleDate = event?.presaleDate || event?.ticketSaleDate;
   const eventUpdates = event?.updates || [];
 
-  const handleToggleReminder = () => {
+  const handleToggleReminder = async () => {
+    if (!event) return;
+
     if (hasReminder) {
-      const reminders = getReminders();
-      const reminder = reminders.find((r) => r.eventId === event.id);
+      const reminder = reminders.find((r) => r.eventId === event.id && r.status === 'active');
       if (reminder) {
-        deleteReminder(reminder.id);
-        setHasReminder(false);
-        toast.success('Reminder removed');
+        try {
+          await removeReminder(reminder.id);
+          setHasReminder(false);
+          toast.success('Reminder removed');
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to remove reminder';
+          toast.error(message);
+        }
       }
     } else {
       if (!saleDate) {
         toast.error('No ticket sale date available');
         return;
       }
-      addReminder({
-        eventId: event.id,
-        userId: 'user-1',
-        intervals: {
-          twoHours: false,
-          oneHour: true,
-          thirtyMinutes: false,
-          tenMinutes: true,
-        },
-        notificationMethods: {
-          browserPush: true,
-          email: false,
-        },
-      });
-      setHasReminder(true);
-      toast.success('Reminder added! You\'ll be notified before tickets go on sale.');
+
+      try {
+        await createReminder({
+          eventId: event.id,
+          intervals: {
+            twoHours: false,
+            oneHour: true,
+            thirtyMinutes: false,
+            tenMinutes: true,
+          },
+          notificationMethods: {
+            browserPush: true,
+            email: false,
+          },
+        });
+        setHasReminder(true);
+        toast.success('Reminder added! You\'ll be notified before tickets go on sale.');
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to create reminder';
+        toast.error(message);
+      }
     }
   };
 

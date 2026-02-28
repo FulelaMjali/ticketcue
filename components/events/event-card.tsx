@@ -1,19 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Calendar, MapPin, Plus, Check } from 'lucide-react';
 import { Event, Reminder } from '@/types';
 import { formatDate } from '@/lib/date-utils';
-import { getReminderByEventId, deleteReminder } from '@/lib/reminder-storage';
 import { ReminderModal } from '@/components/reminders/reminder-modal';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useReminders } from '@/hooks/use-reminders';
 
 interface EventCardProps {
   event: Event;
+  isReminderActive?: boolean;
 }
 
 const categoryColors: Record<string, string> = {
@@ -32,25 +33,30 @@ const statusLabels: Record<string, { label: string; color: string }> = {
   soldout: { label: 'Sold Out', color: 'bg-red-500/10 text-red-400' },
 };
 
-export function EventCard({ event }: EventCardProps) {
-  const [hasReminder, setHasReminder] = useState(false);
+export function EventCard({ event, isReminderActive = false }: EventCardProps) {
+  const [hasReminder, setHasReminder] = useState(isReminderActive);
   const [showReminderModal, setShowReminderModal] = useState(false);
+  const { reminders, removeReminder } = useReminders();
 
   useEffect(() => {
-    // Check localStorage after hydration to avoid hydration mismatch
-    setHasReminder(!!getReminderByEventId(event.id));
-  }, [event.id]);
+    setHasReminder(isReminderActive);
+  }, [isReminderActive]);
 
-  const handleToggleReminder = (e: React.MouseEvent) => {
+  const handleToggleReminder = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (hasReminder) {
-      const reminder = getReminderByEventId(event.id);
+      const reminder = reminders.find((item) => item.eventId === event.id && item.status === 'active');
       if (reminder) {
-        deleteReminder(reminder.id);
-        setHasReminder(false);
-        toast.success('Reminder removed');
+        try {
+          await removeReminder(reminder.id);
+          setHasReminder(false);
+          toast.success('Reminder removed');
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to remove reminder';
+          toast.error(message);
+        }
       }
     } else {
       setShowReminderModal(true);
