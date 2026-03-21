@@ -1,7 +1,9 @@
-import NextAuth from "next-auth";
+import NextAuth from 'next-auth';
 
-// Lightweight auth config for Edge runtime (middleware). Avoids Node-only deps like nodemailer/Prisma.
+// Edge-safe auth that can validate JWT sessions issued by the main NextAuth config.
 export const { auth } = NextAuth({
-  providers: [],
-  session: { strategy: "jwt" },
+  providers: [], // decoding JWT does not require providers here
+  session: { strategy: 'jwt' },
+  secret: process.env.NEXTAUTH_SECRET,
+  trustHost: true,
 });

@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from './lib/auth-edge';
 
 const PROTECTED_PATHS = ['/dashboard', '/reminders', '/events', '/calendar'];
 
-export default auth((req) => {
+const handler = auth((req) => {
   const { pathname } = req.nextUrl;
   const isProtected = PROTECTED_PATHS.some((path) => pathname.startsWith(path));
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register');
@@ -22,6 +22,10 @@ export default auth((req) => {
 
   return NextResponse.next();
 });
+
+export function proxy(request: NextRequest) {
+  return handler(request);
+}
 
 export const config = {
   matcher: [
