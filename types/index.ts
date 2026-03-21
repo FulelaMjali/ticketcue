@@ -1,6 +1,7 @@
 export type EventCategory = 'concert' | 'sports' | 'theater' | 'comedy' | 'festival' | 'nightlife';
 export type EventStatus = 'upcoming' | 'presale' | 'onsale' | 'soldout';
 export type ReminderStatus = 'active' | 'completed' | 'dismissed';
+export type ReminderSalePhase = 'presale' | 'general_sale';
 export type UpdateType = 'lineup' | 'tickets' | 'schedule' | 'weather' | 'logistics' | 'alert';
 export type UpdatePriority = 'normal' | 'important' | 'urgent';
 
@@ -27,6 +28,7 @@ export interface Reminder {
   id: string;
   eventId: string;
   userId: string;
+  salePhase?: string; // 'presale' | 'general_sale'
   intervals: {
     twoHours: boolean;
     oneHour: boolean;
@@ -56,7 +58,7 @@ export interface EventUpdate {
 
 export interface EventUserStatus {
   eventId: string;
-  userId: string;
+  status: 'interested' | 'secured' | null;
   ticketsSecured: boolean;
   updatedAt: Date;
 }

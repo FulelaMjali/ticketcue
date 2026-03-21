@@ -12,11 +12,13 @@ import Link from 'next/link';
 import { useEvents } from '@/hooks/use-events';
 import { useReminders } from '@/hooks/use-reminders';
 import { useUpdatesFeed } from '@/hooks/use-updates';
+import { useUserProfile } from '@/hooks/use-user-profile';
 
 export default function DashboardPage() {
   const { reminders, removeReminder, loading: remindersLoading, error: remindersError } = useReminders();
   const { data, loading, error } = useEvents(1, 100);
   const { updates: feedUpdates, loading: updatesLoading, error: updatesError } = useUpdatesFeed();
+  const { profile, loading: profileLoading } = useUserProfile();
   const events = data?.events || [];
   const eventsById = useMemo(() => new Map(events.map((evt) => [evt.id, evt])), [events]);
 
@@ -51,20 +53,53 @@ export default function DashboardPage() {
     return [...feedUpdates].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 5);
   }, [feedUpdates]);
 
+  // Get user initials from name or email
+  const getUserInitials = () => {
+    if (profile?.name) {
+      return profile.name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    if (profile?.email) {
+      return profile.email[0].toUpperCase();
+    }
+    return 'U';
+  };
+
+  // Get user display name
+  const getUserDisplayName = () => {
+    return profile?.name || profile?.email?.split('@')[0] || 'User';
+  };
+
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-              <span className="text-xl font-bold">JD</span>
+          {profileLoading ? (
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 rounded-full bg-muted animate-pulse" />
+              <div>
+                <div className="h-8 w-48 bg-muted animate-pulse rounded mb-2" />
+                <div className="h-5 w-32 bg-muted animate-pulse rounded" />
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold">Welcome Back</h1>
-              <p className="text-muted-foreground">Event enthusiast</p>
+          ) : (
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                <span className="text-xl font-bold">{getUserInitials()}</span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">Welcome Back, {getUserDisplayName()}</h1>
+                <p className="text-muted-foreground">
+                  {profile?.stats.ticketsSecured || 0} tickets secured • {profile?.stats.activeReminders || 0} reminders
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -163,20 +198,34 @@ export default function DashboardPage() {
                 <h3 className="text-sm font-medium text-muted-foreground mb-4">
                   YOUR ACTIVITY
                 </h3>
-                <div className="space-y-4">
-                  <div>
-                    <div className="text-3xl font-bold text-primary">
-                      {activeReminders.length}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Active Reminders</div>
+                {profileLoading ? (
+                  <div className="space-y-4">
+                    <div className="h-12 bg-white/10 animate-pulse rounded" />
+                    <div className="h-12 bg-white/10 animate-pulse rounded" />
+                    <div className="h-12 bg-white/10 animate-pulse rounded" />
                   </div>
-                  <div>
-                    <div className="text-3xl font-bold text-primary">
-                      {upcomingSales.length}
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-3xl font-bold text-primary">
+                        {profile?.stats.ticketsSecured || 0}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Tickets Secured</div>
                     </div>
-                    <div className="text-sm text-muted-foreground">This Week</div>
+                    <div>
+                      <div className="text-3xl font-bold text-primary">
+                        {profile?.stats.eventsThisMonth || 0}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Events This Month</div>
+                    </div>
+                    <div>
+                      <div className="text-3xl font-bold text-primary">
+                        {profile?.stats.activeReminders || 0}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Active Reminders</div>
+                    </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
 

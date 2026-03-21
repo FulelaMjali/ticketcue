@@ -9,12 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { hasTicketsSecured, updateTicketsSecured } from '@/lib/event-status-storage';
 import { formatDate, formatTime, formatRelativeTime } from '@/lib/date-utils';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useEvent } from '@/hooks/use-events';
 import { useReminders } from '@/hooks/use-reminders';
+import { useEventStatus } from '@/hooks/use-event-status';
 
 export default function EventDetailPage() {
   const params = useParams();
@@ -22,15 +22,14 @@ export default function EventDetailPage() {
   const eventId = params.id as string;
   const [hasReminder, setHasReminder] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [ticketsSecured, setTicketsSecured] = useState(false);
 
   const { data: event, loading, error } = useEvent(eventId);
   const { reminders, createReminder, removeReminder } = useReminders();
+  const { eventStatus, setStatus: setEventStatus } = useEventStatus(eventId);
 
   useEffect(() => {
     if (event) {
       setHasReminder(reminders.some((r) => r.eventId === event.id && r.status === 'active'));
-      setTicketsSecured(hasTicketsSecured(event.id));
     }
   }, [event, reminders]);
 
@@ -81,7 +80,14 @@ export default function EventDetailPage() {
   }
 
   const saleDate = event?.presaleDate || event?.ticketSaleDate;
+  const hasBothPhases = event?.presaleDate && event?.ticketSaleDate;
   const eventUpdates = event?.updates || [];
+
+  const determineSalePhase = () => {
+    if (event?.presaleDate) return 'presale';
+    if (event?.ticketSaleDate) return 'general_sale';
+    return undefined;
+  };
 
   const handleToggleReminder = async () => {
     if (!event) return;
@@ -105,8 +111,10 @@ export default function EventDetailPage() {
       }
 
       try {
+        const salePhase = determineSalePhase();
         await createReminder({
           eventId: event.id,
+          salePhase: salePhase as any,
           intervals: {
             twoHours: false,
             oneHour: true,
@@ -119,7 +127,8 @@ export default function EventDetailPage() {
           },
         });
         setHasReminder(true);
-        toast.success('Reminder added! You\'ll be notified before tickets go on sale.');
+        const phaseLabel = salePhase === 'presale' ? 'presale' : 'general sale';
+        toast.success(`Reminder added for ${phaseLabel}! You'll be notified before tickets go on sale.`);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to create reminder';
         toast.error(message);
@@ -127,11 +136,20 @@ export default function EventDetailPage() {
     }
   };
 
-  const handleToggleTicketsSecured = () => {
-    const newStatus = !ticketsSecured;
-    updateTicketsSecured(event.id, newStatus);
-    setTicketsSecured(newStatus);
-    toast.success(newStatus ? 'Marked as tickets secured!' : 'Tickets secured status removed');
+  const handleSetEventStatus = async (status: 'interested' | 'secured' | null) => {
+    try {
+      if (status === null) {
+        await setEventStatus(null);
+        toast.success('Status removed');
+      } else {
+        await setEventStatus(status);
+        const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+        toast.success(`Marked as ${statusLabel}!`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update status';
+      toast.error(message);
+    }
   };
 
   const statusConfig = {
@@ -326,29 +344,67 @@ export default function EventDetailPage() {
                         <p className="text-sm text-muted-foreground mb-3">
                           Notify me 10 minutes before sale
                         </p>
-                        <Button
-                          onClick={handleToggleReminder}
-                          className={cn(
-                            'w-full',
-                            hasReminder ? 'bg-accent text-foreground hover:bg-accent/80' : 'bg-gradient-magenta'
-                          )}
-                        >
-                          <Bell className="w-4 h-4 mr-2" />
-                          {hasReminder ? 'Reminder Set' : 'Set Alert'}
-                        </Button>
+                        {hasBothPhases ? (
+                          <div className="space-y-2">
+                            <Button
+                              onClick={() => handleToggleReminder()} // TODO: pass phase
+                              className={cn(
+                                'w-full text-xs',
+                                hasReminder ? 'bg-accent text-foreground hover:bg-accent/80' : 'bg-blue-600 hover:bg-blue-700'
+                              )}
+                            >
+                              <Bell className="w-3 h-3 mr-2" />
+                              {hasReminder ? 'Presale Alert Set' : 'Presale Alert'}
+                            </Button>
+                            <Button
+                              onClick={() => handleToggleReminder()} // TODO: pass phase
+                              variant="outline"
+                              className="w-full text-xs"
+                            >
+                              <Bell className="w-3 h-3 mr-2" />
+                              General Sale Alert
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            onClick={handleToggleReminder}
+                            className={cn(
+                              'w-full',
+                              hasReminder ? 'bg-accent text-foreground hover:bg-accent/80' : 'bg-gradient-magenta'
+                            )}
+                          >
+                            <Bell className="w-4 h-4 mr-2" />
+                            {hasReminder ? 'Reminder Set' : 'Set Alert'}
+                          </Button>
+                        )}
                       </div>
                       <div className="pt-3 border-t border-border">
-                        <Button
-                          onClick={handleToggleTicketsSecured}
-                          variant={ticketsSecured ? 'default' : 'outline'}
-                          className={cn(
-                            'w-full',
-                            ticketsSecured && 'bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30'
-                          )}
-                        >
-                          <Check className="w-4 h-4 mr-2" />
-                          {ticketsSecured ? 'Tickets Secured!' : 'Mark Tickets Secured'}
-                        </Button>
+                        <p className="text-sm text-muted-foreground mb-3">Mark your status</p>
+                        <div className="space-y-2">
+                          <Button
+                            onClick={() => handleSetEventStatus(eventStatus?.status === 'interested' ? null : 'interested')}
+                            variant={eventStatus?.status === 'interested' ? 'default' : 'outline'}
+                            className={cn(
+                              'w-full',
+                              eventStatus?.status === 'interested' && 'bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30'
+                            )}
+                            size="sm"
+                          >
+                            ♡ Interested
+                          </Button>
+                          <Button
+                            onClick={() => handleSetEventStatus(eventStatus?.status === 'secured' ? null : 'secured')}
+                            variant={eventStatus?.status === 'secured' ? 'default' : 'outline'}
+                            className={cn(
+                              'w-full',
+                              eventStatus?.status === 'secured' && 'bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30'
+                            )}
+                            size="sm"
+                          >
+                            <Check className="w-3 h-3 mr-1" />
+                            Tickets Secured
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </CardContent>

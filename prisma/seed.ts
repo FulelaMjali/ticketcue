@@ -264,6 +264,19 @@ async function main() {
     });
     console.log(`Created test user: ${user.email}`);
 
+    // Create user preferences for test user
+    await prisma.userPreferences.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: {
+        userId: user.id,
+        preferredCategories: JSON.stringify(['concert', 'festival', 'sports']),
+        emailNotifications: true,
+        pushNotifications: true,
+      },
+    });
+    console.log(`Created preferences for ${user.email}`);
+
     // Create reminders for test user on events with updates
     const remindersToCreate = [
       'Neon Valley Festival 2024',
@@ -293,6 +306,36 @@ async function main() {
           },
         });
         console.log(`Created reminder for ${user.email} on ${eventTitle}`);
+      }
+    }
+
+    // Create event statuses for test user
+    const statusesToCreate = [
+      { eventTitle: 'Neon Valley Festival 2024', status: 'interested' as const },
+      { eventTitle: 'Lakers vs. Warriors', status: 'going' as const },
+      { eventTitle: 'The Eras Tour', status: 'secured' as const },
+      { eventTitle: 'Ultra Miami', status: 'interested' as const },
+    ];
+
+    for (const { eventTitle, status } of statusesToCreate) {
+      const eventId = byTitle.get(eventTitle);
+      if (eventId) {
+        await prisma.eventUserStatus.upsert({
+          where: {
+            userId_eventId: {
+              userId: user.id,
+              eventId,
+            },
+          },
+          update: {},
+          create: {
+            userId: user.id,
+            eventId,
+            status,
+            ticketsSecured: status === 'secured',
+          },
+        });
+        console.log(`Created ${status} status for ${user.email} on ${eventTitle}`);
       }
     }
 

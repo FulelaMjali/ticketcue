@@ -21,6 +21,7 @@ model User {
   reminders         Reminder[]
   eventStatuses     EventUserStatus[]
   pushSubscriptions PushSubscription[]
+  userPreferences   UserPreferences?
   accounts          Account[]
   sessions          Session[]
 
@@ -92,6 +93,7 @@ model Reminder {
   id                 String   @id @default(cuid())
   userId            String
   eventId           String
+  salePhase         String?  // 'presale' | 'general_sale' | null
   intervals         String   // JSON string: { twoHours: boolean, oneHour: boolean, thirtyMinutes: boolean, tenMinutes: boolean }
   notificationMethods String  // JSON string: { browserPush: boolean, email: boolean }
   status            String   // ReminderStatus: 'active' | 'completed' | 'dismissed'
@@ -151,6 +153,22 @@ model PushSubscription {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, endpoint])
   @@map("push_subscriptions")
+  @@index([userId])
+}
+
+model UserPreferences {
+  id                    String     @id @default(cuid())
+  userId                String     @unique
+  preferredCategories   String     // JSON: ['concert', 'sports', ...] or empty array
+  emailNotifications    Boolean    @default(true)
+  pushNotifications     Boolean    @default(true)
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
   @@index([userId])
 }

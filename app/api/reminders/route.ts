@@ -17,6 +17,7 @@ const notificationMethodsSchema = z.object({
 
 const createReminderSchema = z.object({
   eventId: z.string().min(1),
+  salePhase: z.enum(['presale', 'general_sale']).optional(),
   intervals: intervalsSchema,
   notificationMethods: notificationMethodsSchema,
 });
@@ -90,6 +91,7 @@ export async function POST(req: NextRequest) {
         userId,
         eventId: parsed.eventId,
         status: 'active',
+        salePhase: parsed.salePhase ?? null,
       },
     });
 
@@ -99,6 +101,7 @@ export async function POST(req: NextRequest) {
         data: {
           intervals: JSON.stringify(parsed.intervals),
           notificationMethods: JSON.stringify(parsed.notificationMethods),
+          salePhase: parsed.salePhase ?? null,
           status: 'active',
         },
       });
@@ -119,6 +122,7 @@ export async function POST(req: NextRequest) {
       data: {
         userId,
         eventId: parsed.eventId,
+        salePhase: parsed.salePhase ?? null,
         intervals: JSON.stringify(parsed.intervals),
         notificationMethods: JSON.stringify(parsed.notificationMethods),
         status: 'active',

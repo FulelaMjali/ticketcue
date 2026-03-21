@@ -4,7 +4,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Event } from '@/types';
-import { hasTicketsSecured } from '@/lib/event-status-storage';
 import { cn } from '@/lib/utils';
 
 interface CalendarGridProps {
@@ -13,6 +12,12 @@ interface CalendarGridProps {
   selectedDate: Date | null;
   onDateSelect: (date: Date) => void;
   onMonthChange: (increment: number) => void;
+  ticketSecuredMap?: Record<string, boolean>;
+}
+
+interface DateItem {
+  event: Event;
+  type: 'ticket_sale' | 'event';
 }
 
 export function CalendarGrid({
@@ -21,6 +26,7 @@ export function CalendarGrid({
   selectedDate,
   onDateSelect,
   onMonthChange,
+  ticketSecuredMap = {},
 }: CalendarGridProps) {
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -41,15 +47,38 @@ export function CalendarGrid({
     return new Date(year, month, 1).getDay();
   };
 
-  const getEventsForDate = (date: Date) => {
-    return events.filter((event) => {
+  const getEventsForDate = (date: Date): DateItem[] => {
+    const items: DateItem[] = [];
+    const addedTicketSales = new Set<string>();
+    
+    events.forEach((event) => {
+      // Check for any ticket sale date (presale or general sale)
+      const hasTicketSale = event.presaleDate || event.ticketSaleDate;
+      if (hasTicketSale && !addedTicketSales.has(event.id)) {
+        const saleDate = event.presaleDate || event.ticketSaleDate;
+        const saleDateObj = new Date(saleDate!);
+        if (
+          saleDateObj.getDate() === date.getDate() &&
+          saleDateObj.getMonth() === date.getMonth() &&
+          saleDateObj.getFullYear() === date.getFullYear()
+        ) {
+          items.push({ event, type: 'ticket_sale' });
+          addedTicketSales.add(event.id);
+        }
+      }
+
+      // Check event date
       const eventDate = new Date(event.date);
-      return (
+      if (
         eventDate.getDate() === date.getDate() &&
         eventDate.getMonth() === date.getMonth() &&
         eventDate.getFullYear() === date.getFullYear()
-      );
+      ) {
+        items.push({ event, type: 'event' });
+      }
     });
+
+    return items;
   };
 
   const daysInMonth = getDaysInMonth(currentDate);
@@ -141,8 +170,8 @@ export function CalendarGrid({
       {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-2">
         {calendarDays.map(({ date, isCurrentMonth }, index) => {
-          const dayEvents = getEventsForDate(date);
-          const hasEvents = dayEvents.length > 0;
+          const dayItems = getEventsForDate(date);
+          const hasItems = dayItems.length > 0;
 
           return (
             <button
@@ -153,26 +182,27 @@ export function CalendarGrid({
                 !isCurrentMonth && 'text-muted-foreground opacity-50',
                 isToday(date) && 'bg-primary/20 text-primary font-bold',
                 isSelected(date) && 'bg-primary text-primary-foreground hover:bg-primary',
-                hasEvents && isCurrentMonth && 'font-semibold'
+                hasItems && isCurrentMonth && 'font-semibold'
               )}
             >
               <div className="flex flex-col items-center justify-center h-full">
                 <span>{date.getDate()}</span>
-                {hasEvents && (
+                {hasItems && (
                   <div className="flex gap-0.5 mt-1 flex-wrap justify-center">
-                    {dayEvents.slice(0, 3).map((event, i) => {
-                      const secured = hasTicketsSecured(event.id);
+                    {dayItems.slice(0, 3).map((item, i) => {
+                      const secured = ticketSecuredMap[item.event.id] || false;
+                      const colors = {
+                        ticket_sale: isSelected(date) ? 'bg-amber-200' : 'bg-amber-500',
+                        event: secured ? 'bg-green-500' : (isSelected(date) ? 'bg-primary-foreground' : 'bg-primary')
+                      };
                       return (
                         <div
                           key={i}
                           className={cn(
                             'w-1 h-1 rounded-full',
-                            secured
-                              ? 'bg-green-500'
-                              : isSelected(date)
-                                ? 'bg-primary-foreground'
-                                : 'bg-primary'
+                            colors[item.type]
                           )}
+                          title={`${item.type}: ${item.event.title}`}
                         />
                       );
                     })}
@@ -185,10 +215,14 @@ export function CalendarGrid({
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 mt-4 pt-4 border-t border-border text-xs">
+      <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-border text-xs">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-amber-500" />
+          <span className="text-muted-foreground">Ticket Sale Opens</span>
+        </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-primary" />
-          <span className="text-muted-foreground">Ticket Sale Reminder</span>
+          <span className="text-muted-foreground">Event Date</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-green-500" />
