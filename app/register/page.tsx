@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -14,12 +15,20 @@ export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const { data: session, status } = useSession();
 
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    if (status === "authenticated" && session?.user) {
+      router.push(callbackUrl);
+    }
+  }, [status, session, router, callbackUrl]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -51,8 +60,21 @@ export default function RegisterPage() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen flex items-center justify-center px-4 py-12">
-        <Card className="w-full max-w-md">
+      {status === "loading" && (
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      )}
+      
+      {status === "authenticated" && (
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-muted-foreground">Redirecting...</p>
+        </div>
+      )}
+
+      {status === "unauthenticated" && (
+        <div className="min-h-screen flex items-center justify-center px-4 py-12">
+          <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl">Create an account</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
@@ -108,7 +130,8 @@ export default function RegisterPage() {
             </p>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      )}
     </AppLayout>
   );
 }

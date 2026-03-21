@@ -6,7 +6,7 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { ReminderCard } from '@/components/reminders/reminder-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { EventCategory } from '@/types';
+import { EventCategory, Reminder } from '@/types';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useEvents } from '@/hooks/use-events';

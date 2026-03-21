@@ -11,10 +11,12 @@ import { formatRelativeTime } from '@/lib/date-utils';
 import Link from 'next/link';
 import { useEvents } from '@/hooks/use-events';
 import { useReminders } from '@/hooks/use-reminders';
+import { useUpdatesFeed } from '@/hooks/use-updates';
 
 export default function DashboardPage() {
   const { reminders, removeReminder, loading: remindersLoading, error: remindersError } = useReminders();
   const { data, loading, error } = useEvents(1, 100);
+  const { updates: feedUpdates, loading: updatesLoading, error: updatesError } = useUpdatesFeed();
   const events = data?.events || [];
   const eventsById = useMemo(() => new Map(events.map((evt) => [evt.id, evt])), [events]);
 
@@ -46,11 +48,8 @@ export default function DashboardPage() {
   });
 
   const latestNews = useMemo(() => {
-    const updates = events.flatMap((evt) => evt.updates || []);
-    return updates
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-      .slice(0, 5);
-  }, [events]);
+    return [...feedUpdates].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 5);
+  }, [feedUpdates]);
 
   return (
     <AppLayout>
@@ -194,7 +193,9 @@ export default function DashboardPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {loading ? (
+                {updatesError ? (
+                  <p className="text-sm text-destructive">Unable to load updates.</p>
+                ) : updatesLoading ? (
                   <div className="space-y-2">
                     {Array.from({ length: 3 }).map((_, idx) => (
                       <div key={idx} className="h-12 bg-muted animate-pulse rounded" />

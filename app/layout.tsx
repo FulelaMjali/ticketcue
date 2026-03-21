@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from '@/components/ui/sonner'
+import { AuthProvider } from '@/components/providers/auth-provider'
 import { NotificationProvider } from '@/components/providers/notification-provider'
 import './globals.css'
 
@@ -39,9 +40,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${_geist.variable} ${_geistMono.variable} font-sans antialiased`}>
-        <NotificationProvider>
-          {children}
-        </NotificationProvider>
+        <AuthProvider>
+          <NotificationProvider>
+            {children}
+          </NotificationProvider>
+        </AuthProvider>
         <Toaster />
         <Analytics />
       </body>

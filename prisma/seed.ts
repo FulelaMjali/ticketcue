@@ -199,6 +199,58 @@ async function main() {
       console.log(`Created event: ${event.title}`);
     }
 
+    // Seed a few live updates linked to events
+    const events = await prisma.event.findMany({ select: { id: true, title: true } });
+    const byTitle = new Map(events.map((e) => [e.title, e.id]));
+
+    const updates = [
+      {
+        eventTitle: 'Neon Valley Festival 2024',
+        type: 'tickets',
+        title: 'Second wave pricing starts Friday',
+        description: 'Early bird tier is closed. Next wave opens this Friday.',
+        priority: 'normal',
+      },
+      {
+        eventTitle: 'Lakers vs. Warriors',
+        type: 'schedule',
+        title: 'Tipoff time moved to 7:45 PM',
+        description: 'Arrive early to avoid entry queues.',
+        priority: 'important',
+      },
+      {
+        eventTitle: 'The Eras Tour',
+        type: 'logistics',
+        title: 'Bag policy reminder',
+        description: 'Only small clear bags permitted. Lockers available at Gate C.',
+        priority: 'normal',
+      },
+      {
+        eventTitle: 'Ultra Miami',
+        type: 'weather',
+        title: 'Heat advisory issued',
+        description: 'Hydration stations doubled across the venue. Stay cool.',
+        priority: 'important',
+      },
+    ];
+
+    for (const update of updates) {
+      const eventId = byTitle.get(update.eventTitle);
+      if (!eventId) continue;
+
+      await prisma.eventUpdate.create({
+        data: {
+          eventId,
+          eventTitle: update.eventTitle,
+          type: update.type,
+          title: update.title,
+          description: update.description,
+          priority: update.priority as 'normal' | 'important' | 'urgent',
+        },
+      });
+      console.log(`Created update for ${update.eventTitle}`);
+    }
+
     // Create a test user
     const hashedPassword = await bcryptjs.hash('password123', 10);
     const user = await prisma.user.upsert({
@@ -211,6 +263,38 @@ async function main() {
       },
     });
     console.log(`Created test user: ${user.email}`);
+
+    // Create reminders for test user on events with updates
+    const remindersToCreate = [
+      'Neon Valley Festival 2024',
+      'Lakers vs. Warriors',
+      'The Eras Tour',
+      'Ultra Miami',
+    ];
+
+    for (const eventTitle of remindersToCreate) {
+      const eventId = byTitle.get(eventTitle);
+      if (eventId) {
+        await prisma.reminder.create({
+          data: {
+            userId: user.id,
+            eventId,
+            intervals: JSON.stringify({
+              twoHours: true,
+              oneHour: true,
+              thirtyMinutes: false,
+              tenMinutes: false,
+            }),
+            notificationMethods: JSON.stringify({
+              browserPush: true,
+              email: false,
+            }),
+            status: 'active',
+          },
+        });
+        console.log(`Created reminder for ${user.email} on ${eventTitle}`);
+      }
+    }
 
     console.log('Seeding completed successfully!');
   } catch (error) {
