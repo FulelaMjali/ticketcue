@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Calendar as CalendarIcon, Plus } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { CalendarGrid } from '@/components/calendar/calendar-grid';
@@ -12,6 +13,7 @@ import Link from 'next/link';
 import { useEvents } from '@/hooks/use-events';
 
 export default function CalendarPage() {
+  const router = useRouter();
   const [currentMonth, setCurrentMonth] = useState<Date | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [ticketSecuredMap, setTicketSecuredMap] = useState<Record<string, boolean>>({});
@@ -113,10 +115,18 @@ export default function CalendarPage() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">Calendar</h1>
-          <p className="text-muted-foreground">
-            Track your upcoming ticket sales and events
-          </p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">Calendar</h1>
+              <p className="text-muted-foreground">
+                Track your upcoming ticket sales and events
+              </p>
+            </div>
+            <Button onClick={() => router.push('/events/create')} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Create Event
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

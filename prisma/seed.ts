@@ -165,6 +165,31 @@ const mockEventsData = [
   },
 ];
 
+function generateTicketPhases(
+  ticketSaleDate: Date | undefined,
+  presaleDate: Date | undefined
+): string {
+  const phases = [];
+
+  if (presaleDate) {
+    phases.push({
+      name: 'Presale',
+      date: presaleDate.toISOString(),
+      status: 'upcoming',
+    });
+  }
+
+  if (ticketSaleDate) {
+    phases.push({
+      name: presaleDate ? 'General Sale' : 'Sale',
+      date: ticketSaleDate.toISOString(),
+      status: 'upcoming',
+    });
+  }
+
+  return JSON.stringify(phases.length > 0 ? phases : [{ name: 'Sale', date: new Date().toISOString(), status: 'upcoming' }]);
+}
+
 async function main() {
   try {
     // Delete existing data in dependency-safe order
@@ -194,6 +219,8 @@ async function main() {
           presaleDate: eventData.presaleDate || null,
           ticketUrl: eventData.ticketUrl || null,
           status: eventData.status,
+          ticketPhases: generateTicketPhases(eventData.ticketSaleDate, eventData.presaleDate),
+          isUserCreated: false,
         },
       });
       console.log(`Created event: ${event.title}`);

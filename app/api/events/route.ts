@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma-client';
+import { searchEvents } from '@/lib/search';
 import { z } from 'zod';
 
 const querySchema = z.object({
@@ -19,47 +20,42 @@ export async function GET(req: NextRequest) {
 
     const skip = (page - 1) * limit;
 
-    // Build where clause
-    const where: any = {};
-    
-    if (category) {
-      where.category = category;
-    }
-    
-    if (status) {
-      where.status = status;
-    }
-    
+    let events;
+    let total;
+
     if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { artist: { contains: search, mode: 'insensitive' } },
-        { venue: { contains: search, mode: 'insensitive' } },
-        { location: { contains: search, mode: 'insensitive' } },
-      ];
+      // Weighted relevance search via raw SQL (title > artist > venue > location)
+      const result = await searchEvents({ search, category, status, skip, take: limit });
+      events = result.events;
+      total = result.total;
+    } else {
+      // Standard filtered query when no search term
+      const where: any = {};
+      if (category) where.category = category;
+      if (status) where.status = status;
+
+      total = await prisma.event.count({ where });
+      const rows = await prisma.event.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { date: 'asc' },
+      });
+
+      events = rows.map((event) => ({
+        ...event,
+        date: event.date.toISOString(),
+        ticketSaleDate: event.ticketSaleDate?.toISOString() || null,
+        presaleDate: event.presaleDate?.toISOString() || null,
+        ticketPhases: event.ticketPhases ? JSON.parse(event.ticketPhases) : [],
+        createdAt: event.createdAt.toISOString(),
+        updatedAt: event.updatedAt.toISOString(),
+      }));
     }
-
-    // Get total count
-    const total = await prisma.event.count({ where });
-
-    // Get events
-    const events = await prisma.event.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { date: 'asc' },
-    });
 
     return NextResponse.json(
       {
-        events: events.map((event) => ({
-          ...event,
-          date: event.date.toISOString(),
-          ticketSaleDate: event.ticketSaleDate?.toISOString() || null,
-          presaleDate: event.presaleDate?.toISOString() || null,
-          createdAt: event.createdAt.toISOString(),
-          updatedAt: event.updatedAt.toISOString(),
-        })),
+        events,
         pagination: {
           page,
           limit,

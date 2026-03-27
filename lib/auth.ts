@@ -50,6 +50,7 @@ providers.push(
         id: user.id,
         email: user.email,
         name: user.name,
+        role: user.role,
       };
     },
   })
@@ -66,13 +67,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     strategy: 'jwt',
   },
   callbacks: {
+    async jwt({ token, user }) {
+      // On sign-in, `user` is populated — embed the role into the token
+      if (user) {
+        token.role = (user as { role?: string }).role ?? 'user';
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.role = token.role ?? 'user';
+      }
+      return session;
+    },
     authorized({ auth, request }) {
       const isLoggedIn = !!auth?.user;
       const isProtectedRoute = request.nextUrl.pathname.startsWith('/dashboard') ||
                              request.nextUrl.pathname.startsWith('/reminders') ||
                              request.nextUrl.pathname.startsWith('/api/reminders') ||
                              request.nextUrl.pathname.startsWith('/api/events/*/status');
-      
+
       if (isProtectedRoute && !isLoggedIn) {
         return false;
       }

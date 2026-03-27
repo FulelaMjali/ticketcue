@@ -5,6 +5,12 @@ export type ReminderSalePhase = 'presale' | 'general_sale';
 export type UpdateType = 'lineup' | 'tickets' | 'schedule' | 'weather' | 'logistics' | 'alert';
 export type UpdatePriority = 'normal' | 'important' | 'urgent';
 
+export interface TicketPhase {
+  name: string;
+  date: Date;
+  status: 'upcoming' | 'active' | 'completed';
+}
+
 export interface Event {
   id: string;
   title: string;
@@ -17,8 +23,11 @@ export interface Event {
   description: string;
   ticketSaleDate?: Date;
   presaleDate?: Date;
+  ticketPhases?: TicketPhase[];
   ticketUrl?: string;
   status: EventStatus;
+  isUserCreated?: boolean;
+  createdByUserId?: string;
   createdAt?: Date;
   updatedAt?: Date;
   updates?: EventUpdate[];

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Bell, Calendar, Home, Newspaper, Settings, Ticket } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { useUserProfile } from '@/hooks/use-user-profile';
 
 const navItems = [
   { href: '/', label: 'Discover', icon: Home },
@@ -15,6 +16,15 @@ const navItems = [
 
 export function DesktopNav() {
   const pathname = usePathname();
+  const { profile } = useUserProfile();
+
+  const getUserInitials = () => {
+    if (profile?.name) {
+      return profile.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+    if (profile?.email) return profile.email[0].toUpperCase();
+    return 'U';
+  };
 
   return (
     <nav className="hidden md:flex fixed top-0 left-0 right-0 h-16 bg-card/80 backdrop-blur-lg border-b border-border z-50">
@@ -53,11 +63,13 @@ export function DesktopNav() {
             <Bell className="w-5 h-5" />
             <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
           </button>
-          <Avatar>
-            <AvatarFallback className="bg-gradient-magenta text-white font-semibold">
-              JD
-            </AvatarFallback>
-          </Avatar>
+          <Link href="/profile">
+            <Avatar className="cursor-pointer hover:opacity-80 transition-opacity">
+              <AvatarFallback className="bg-gradient-magenta text-white font-semibold">
+                {getUserInitials()}
+              </AvatarFallback>
+            </Avatar>
+          </Link>
         </div>
       </div>
     </nav>

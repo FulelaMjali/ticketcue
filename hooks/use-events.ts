@@ -52,6 +52,7 @@ export function useEvents(page = 1, limit = 10, filters?: {
           presaleDate: event.presaleDate ? new Date(event.presaleDate) : undefined,
           createdAt: event.createdAt ? new Date(event.createdAt) : undefined,
           updatedAt: event.updatedAt ? new Date(event.updatedAt) : undefined,
+          ticketPhases: Array.isArray(event.ticketPhases) ? event.ticketPhases : [],
         }));
         
         setData({
@@ -111,6 +112,7 @@ export function useEvent(eventId: string) {
           presaleDate: event.presaleDate ? new Date(event.presaleDate) : undefined,
           createdAt: event.createdAt ? new Date(event.createdAt) : undefined,
           updatedAt: event.updatedAt ? new Date(event.updatedAt) : undefined,
+          ticketPhases: Array.isArray(event.ticketPhases) ? event.ticketPhases : [],
           updates,
         });
       } catch (err) {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Bell, Share2, MapPin, Calendar, ExternalLink, Heart, Check } from 'lucide-react';
+import { ArrowLeft, Bell, Share2, MapPin, Calendar, ExternalLink, Heart, Check, Edit } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { CountdownTimer } from '@/components/events/countdown-timer';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ export default function EventDetailPage() {
   const eventId = params.id as string;
   const [hasReminder, setHasReminder] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [heroImageError, setHeroImageError] = useState(false);
 
   const { data: event, loading, error } = useEvent(eventId);
   const { reminders, createReminder, removeReminder } = useReminders();
@@ -166,13 +167,16 @@ export default function EventDetailPage() {
       <div className="min-h-screen">
         {/* Hero Section */}
         <div className="relative h-[60vh] md:h-[70vh] overflow-hidden">
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage: event.imageUrl ? `url(${event.imageUrl})` : 'none',
-              backgroundColor: event.imageUrl ? 'transparent' : '#2d1b4e',
-            }}
-          />
+          {event.imageUrl && !heroImageError ? (
+            <img
+              src={event.imageUrl}
+              alt={event.title}
+              className="absolute inset-0 w-full h-full object-cover"
+              onError={() => setHeroImageError(true)}
+            />
+          ) : (
+            <div className="absolute inset-0 bg-linear-to-br from-primary/30 via-primary/10 to-background" />
+          )}
           <div className="absolute inset-0 bg-linear-to-t from-background via-background/60 to-transparent" />
 
           {/* Back Button */}
@@ -189,6 +193,16 @@ export default function EventDetailPage() {
 
           {/* Actions */}
           <div className="absolute top-4 right-4 z-10 flex gap-2">
+            {event.isUserCreated && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.push(`/events/${event.id}/edit`)}
+                className="bg-background/80 backdrop-blur-sm hover:bg-background/90"
+              >
+                <Edit className="w-5 h-5" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"

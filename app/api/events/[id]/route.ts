@@ -33,6 +33,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         date: event.date.toISOString(),
         ticketSaleDate: event.ticketSaleDate?.toISOString() || null,
         presaleDate: event.presaleDate?.toISOString() || null,
+        ticketPhases: event.ticketPhases ? JSON.parse(event.ticketPhases) : [],
         createdAt: event.createdAt.toISOString(),
         updatedAt: event.updatedAt.toISOString(),
         updates: event.updates.map((update) => ({

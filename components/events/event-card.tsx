@@ -36,6 +36,7 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 export function EventCard({ event, isReminderActive = false }: EventCardProps) {
   const [hasReminder, setHasReminder] = useState(isReminderActive);
   const [showReminderModal, setShowReminderModal] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const { reminders, removeReminder } = useReminders();
 
   useEffect(() => {
@@ -80,17 +81,18 @@ export function EventCard({ event, isReminderActive = false }: EventCardProps) {
       <Link href={`/events/${event.id}`}>
         <div className="group relative overflow-hidden rounded-xl bg-card border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10">
         <div className="relative h-48 w-full overflow-hidden bg-accent">
-          {event.imageUrl ? (
+          {event.imageUrl && !imageError ? (
             <Image
               src={event.imageUrl}
               alt={event.title}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               unoptimized
+              onError={() => setImageError(true)}
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-radial-purple flex items-center justify-center">
-              <Calendar className="w-12 h-12 text-muted-foreground" />
+            <div className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-primary/20 via-primary/10 to-accent">
+              <Calendar className="w-12 h-12 text-primary/40" />
             </div>
           )}
           <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent" />

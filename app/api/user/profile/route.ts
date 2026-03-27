@@ -16,6 +16,7 @@ export async function GET(req: Request) {
         userPreferences: true,
         reminders: {
           where: { status: 'active' },
+          include: { event: true },
         },
         eventStatuses: {
           where: { status: 'secured' },
@@ -47,6 +48,15 @@ export async function GET(req: Request) {
       },
     });
 
+    // Count active reminders for future events only
+    const activeRemindersForFutureEvents = (user.reminders || []).filter((reminder) => {
+      const event = reminder.event;
+      if (!event) return false;
+      const saleDate = event.presaleDate || event.ticketSaleDate;
+      if (!saleDate) return false;
+      return saleDate.getTime() > now.getTime();
+    }).length;
+
     const profile = {
       id: user.id,
       name: user.name || '',
@@ -66,7 +76,7 @@ export async function GET(req: Request) {
           },
       stats: {
         ticketsSecured: user.eventStatuses?.length || 0,
-        activeReminders: user.reminders?.length || 0,
+        activeReminders: activeRemindersForFutureEvents,
         eventsThisMonth,
       },
     };
@@ -129,6 +139,9 @@ export async function PATCH(req: Request) {
           where: { userId: user.id },
           create: {
             userId: user.id,
+            preferredCategories: '[]',
+            emailNotifications: true,
+            pushNotifications: true,
             ...preferencesData,
           },
           update: preferencesData,
@@ -143,6 +156,7 @@ export async function PATCH(req: Request) {
         userPreferences: true,
         reminders: {
           where: { status: 'active' },
+          include: { event: true },
         },
         eventStatuses: {
           where: { status: 'secured' },
@@ -173,6 +187,15 @@ export async function PATCH(req: Request) {
       },
     });
 
+    // Count active reminders for future events only
+    const activeRemindersForFutureEvents = (updatedUser.reminders || []).filter((reminder) => {
+      const event = reminder.event;
+      if (!event) return false;
+      const saleDate = event.presaleDate || event.ticketSaleDate;
+      if (!saleDate) return false;
+      return saleDate.getTime() > now.getTime();
+    }).length;
+
     const profile = {
       id: updatedUser.id,
       name: updatedUser.name || '',
@@ -192,7 +215,7 @@ export async function PATCH(req: Request) {
           },
       stats: {
         ticketsSecured: updatedUser.eventStatuses?.length || 0,
-        activeReminders: updatedUser.reminders?.length || 0,
+        activeReminders: activeRemindersForFutureEvents,
         eventsThisMonth,
       },
     };

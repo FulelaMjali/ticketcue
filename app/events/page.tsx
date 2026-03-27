@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Search, SlidersHorizontal, Plus } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { EventCard } from '@/components/events/event-card';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ import { EventCategory } from '@/types';
 import { cn } from '@/lib/utils';
 import { useEvents } from '@/hooks/use-events';
 import { useReminders } from '@/hooks/use-reminders';
+import { useUserProfile } from '@/hooks/use-user-profile';
 
 const categories: { value: EventCategory | 'all'; label: string }[] = [
   { value: 'all', label: 'All Events' },
@@ -23,14 +25,34 @@ const categories: { value: EventCategory | 'all'; label: string }[] = [
 ];
 
 export default function EventsPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<EventCategory | 'all'>('all');
+  const [categoryInitialized, setCategoryInitialized] = useState(false);
   const { reminders } = useReminders();
+  const { profile } = useUserProfile();
+
+  // Once the profile loads, auto-select the preferred category if the user has exactly one.
+  // If they have multiple preferences, keep 'all' — the badge highlights show what they care about.
+  useEffect(() => {
+    if (profile && !categoryInitialized) {
+      setCategoryInitialized(true);
+      const prefs = profile.preferences.preferredCategories as EventCategory[];
+      if (prefs.length === 1) {
+        setSelectedCategory(prefs[0]);
+      }
+    }
+  }, [profile, categoryInitialized]);
 
   const { data, loading, error } = useEvents(1, 20, {
     category: selectedCategory === 'all' ? undefined : selectedCategory,
     search: searchQuery || undefined,
   });
+
+  const preferredCategories = useMemo(
+    () => new Set((profile?.preferences.preferredCategories ?? []) as EventCategory[]),
+    [profile]
+  );
 
   const filteredEvents = useMemo(() => {
     const events = data?.events || [];
@@ -54,7 +76,13 @@ export default function EventsPage() {
         {/* Header */}
         <div className="bg-card/50 border-b border-border backdrop-blur-sm sticky top-0 z-10">
           <div className="container mx-auto px-4 py-6">
-            <h1 className="text-2xl md:text-3xl font-bold mb-4">Discover Events</h1>
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-2xl md:text-3xl font-bold">Discover Events</h1>
+              <Button onClick={() => router.push('/events/create')} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Create Event
+              </Button>
+            </div>
 
             {/* Search Bar */}
             <div className="relative max-w-2xl mb-4">
@@ -77,21 +105,30 @@ export default function EventsPage() {
 
             {/* Categories */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {categories.map((category) => (
-                <Badge
-                  key={category.value}
-                  variant={selectedCategory === category.value ? 'default' : 'outline'}
-                  className={cn(
-                    'cursor-pointer px-4 py-2 text-sm font-medium transition-all whitespace-nowrap',
-                    selectedCategory === category.value
-                      ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
-                      : 'hover:bg-accent'
-                  )}
-                  onClick={() => setSelectedCategory(category.value)}
-                >
-                  {category.label}
-                </Badge>
-              ))}
+              {categories.map((category) => {
+                const isSelected = selectedCategory === category.value;
+                const isPreferred = category.value !== 'all' && preferredCategories.has(category.value as EventCategory);
+                return (
+                  <Badge
+                    key={category.value}
+                    variant={isSelected ? 'default' : 'outline'}
+                    className={cn(
+                      'cursor-pointer px-4 py-2 text-sm font-medium transition-all whitespace-nowrap',
+                      isSelected
+                        ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                        : isPreferred
+                        ? 'border-primary/50 text-primary hover:bg-primary/10'
+                        : 'hover:bg-accent'
+                    )}
+                    onClick={() => setSelectedCategory(category.value)}
+                  >
+                    {category.label}
+                    {isPreferred && !isSelected && (
+                      <span className="ml-1 w-1.5 h-1.5 rounded-full bg-primary inline-block align-middle" />
+                    )}
+                  </Badge>
+                );
+              })}
             </div>
           </div>
         </div>

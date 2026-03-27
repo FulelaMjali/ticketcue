@@ -5,6 +5,7 @@ import { Reminder } from '@/types';
 
 type ReminderPayload = {
   eventId: string;
+  salePhase?: string;
   intervals: Reminder['intervals'];
   notificationMethods: Reminder['notificationMethods'];
 };

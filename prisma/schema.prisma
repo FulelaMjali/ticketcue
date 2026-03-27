@@ -11,12 +11,13 @@ datasource db {
 }
 
 model User {
-  id            String     @id @default(cuid())
-  name          String?
-  email         String     @unique
+  id             String  @id @default(cuid())
+  name           String?
+  email          String  @unique
   hashedPassword String?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  role           String  @default("user") // "user" | "admin"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   reminders         Reminder[]
   eventStatuses     EventUserStatus[]
@@ -66,39 +67,45 @@ model VerificationToken {
 }
 
 model Event {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   title           String
   artist          String?
   venue           String
   location        String
   date            DateTime
-  category        String // EventCategory: 'concert' | 'sports' | 'theater' | 'comedy' | 'festival' | 'nightlife'
+  category        String    // EventCategory: 'concert' | 'sports' | 'theater' | 'comedy' | 'festival' | 'nightlife'
   imageUrl        String
   description     String
   ticketSaleDate  DateTime?
   presaleDate     DateTime?
   ticketUrl       String?
-  status          String   // EventStatus: 'upcoming' | 'presale' | 'onsale' | 'soldout'
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  status          String    // EventStatus: 'upcoming' | 'presale' | 'onsale' | 'soldout'
+  ticketPhases    String    // JSON: [{ name: string, date: DateTime, status: string }]
+  createdByUserId String?   // null for system/imported events, userId for user-created events
+  isUserCreated   Boolean   @default(false)
+  externalId      String?   // e.g. Ticketmaster event ID
+  source          String?   // "ticketmaster" | "bandsintown" | "manual"
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   reminders     Reminder[]
   userStatuses  EventUserStatus[]
   updates       EventUpdate[]
 
+  @@unique([externalId, source])
   @@map("events")
 }
 
 model Reminder {
-  id                 String   @id @default(cuid())
-  userId            String
-  eventId           String
-  salePhase         String?  // 'presale' | 'general_sale' | null
-  intervals         String   // JSON string: { twoHours: boolean, oneHour: boolean, thirtyMinutes: boolean, tenMinutes: boolean }
-  notificationMethods String  // JSON string: { browserPush: boolean, email: boolean }
-  status            String   // ReminderStatus: 'active' | 'completed' | 'dismissed'
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  userId              String
+  eventId             String
+  salePhase           String?  // 'presale' | 'general_sale' | null
+  intervals           String   // JSON string: { twoHours: boolean, oneHour: boolean, thirtyMinutes: boolean, tenMinutes: boolean }
+  notificationMethods String   // JSON string: { browserPush: boolean, email: boolean }
+  status              String   // ReminderStatus: 'active' | 'completed' | 'dismissed'
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   event Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -159,16 +166,40 @@ model PushSubscription {
 }
 
 model UserPreferences {
-  id                    String     @id @default(cuid())
-  userId                String     @unique
-  preferredCategories   String     // JSON: ['concert', 'sports', ...] or empty array
-  emailNotifications    Boolean    @default(true)
-  pushNotifications     Boolean    @default(true)
-  createdAt             DateTime   @default(now())
-  updatedAt             DateTime   @updatedAt
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  preferredCategories String   // JSON: ['concert', 'sports', ...] or empty array
+  emailNotifications  Boolean  @default(true)
+  pushNotifications   Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_preferences")
   @@index([userId])
+}
+
+model SyncLog {
+  id             String    @id @default(cuid())
+  source         String    // "ticketmaster"
+  startedAt      DateTime  @default(now())
+  finishedAt     DateTime?
+  eventsUpserted Int       @default(0)
+  errorMessage   String?
+
+  @@map("sync_logs")
+}
+
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  source      String    // "ticketmaster"
+  eventType   String    // "onsale" | "soldout" | "cancelled"
+  externalId  String
+  rawPayload  String    // JSON blob
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@map("webhook_events")
+  @@index([externalId])
 }
