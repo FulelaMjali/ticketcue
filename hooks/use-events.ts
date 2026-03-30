@@ -13,10 +13,11 @@ export interface EventsResponse {
   };
 }
 
-export function useEvents(page = 1, limit = 10, filters?: {
+export function useEvents(page = 1, limit = 12, filters?: {
   category?: string;
   search?: string;
   status?: string;
+  sort?: 'date_asc' | 'date_desc' | 'created_desc';
 }) {
   const [data, setData] = useState<EventsResponse | null>(null);
   const [error, setError] = useState<Error | null>(null);
@@ -34,6 +35,7 @@ export function useEvents(page = 1, limit = 10, filters?: {
           ...(filters?.category && { category: filters.category }),
           ...(filters?.search && { search: filters.search }),
           ...(filters?.status && { status: filters.status }),
+          ...(filters?.sort && { sort: filters.sort }),
         });
 
         const response = await fetch(`/api/events?${params}`);
@@ -68,7 +70,7 @@ export function useEvents(page = 1, limit = 10, filters?: {
     };
 
     fetchEvents();
-  }, [page, limit, filters?.category, filters?.search, filters?.status]);
+  }, [page, limit, filters?.category, filters?.search, filters?.status, filters?.sort]);
 
   return { data, error, loading };
 }

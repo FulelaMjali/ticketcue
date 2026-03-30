@@ -4,195 +4,108 @@ import bcryptjs from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-const now = new Date();
-const futureSaleDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-const futureEventDate = new Date(now.getTime() + 45 * 24 * 60 * 60 * 1000);
+const d = (offset: number) => new Date(Date.now() + offset * 24 * 60 * 60 * 1000);
 
 const mockEventsData = [
   {
-    title: 'Future Countdown Test Event',
-    artist: 'TicketCue Test Artist',
-    venue: 'Demo Arena',
-    location: 'Cape Town, ZA',
-    date: futureEventDate,
-    category: 'concert',
-    imageUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800',
-    description: 'A seeded future event to validate reminder countdown behavior in the UI.',
-    ticketSaleDate: futureSaleDate,
-    presaleDate: undefined,
-    ticketUrl: 'https://example.com/future-countdown-test',
-    status: 'upcoming',
-  },
-  {
-    title: 'Neon Valley Festival 2024',
-    artist: 'Multiple Artists',
-    venue: 'Desert Grounds',
-    location: 'Los Angeles, CA',
-    date: new Date('2024-08-12T18:00:00'),
-    category: 'festival',
-    imageUrl: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/screen%20%287%29-S2lu5BRa7T5VNlWfLEHcN8z8QgGQB7.png',
-    description: 'Get ready for the most immersive electronic music experience of the year.',
-    ticketSaleDate: new Date('2024-06-15T10:00:00'),
-    presaleDate: new Date('2024-06-10T10:00:00'),
-    ticketUrl: 'https://example.com/tickets',
-    status: 'upcoming',
-  },
-  {
-    title: 'The Eras Tour',
+    title: 'The Eras Tour — Final Leg',
     artist: 'Taylor Swift',
     venue: 'Wembley Stadium',
     location: 'London, UK',
-    date: new Date('2024-08-05T19:00:00'),
+    date: d(45),
     category: 'concert',
-    imageUrl: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/screen%20%286%29-lnochKdTa5McsfZ94UdsbfnhNd5M60.png',
-    description: 'Experience the journey through all musical eras.',
-    ticketSaleDate: new Date('2024-05-20T10:00:00'),
-    presaleDate: undefined,
-    ticketUrl: undefined,
-    status: 'onsale',
-  },
-  {
-    title: 'Coachella 2024',
-    artist: 'Various Artists',
-    venue: 'Empire Polo Club',
-    location: 'Indio, CA',
-    date: new Date('2024-04-12T12:00:00'),
-    category: 'festival',
-    imageUrl: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/screen-r9GNl4tjjN2t38k53fA5mW9LTOsnZj.png',
-    description: 'The premier music and arts festival returns.',
-    ticketSaleDate: new Date('2024-01-15T12:00:00'),
-    presaleDate: new Date('2024-01-12T12:00:00'),
-    ticketUrl: undefined,
-    status: 'soldout',
-  },
-  {
-    title: 'Lakers vs. Warriors',
-    artist: undefined,
-    venue: 'Crypto.com Arena',
-    location: 'Los Angeles, CA',
-    date: new Date('2024-11-10T19:30:00'),
-    category: 'sports',
-    imageUrl: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800',
-    description: 'NBA Regular Season showdown.',
-    ticketSaleDate: new Date('2024-09-01T10:00:00'),
-    presaleDate: undefined,
-    ticketUrl: undefined,
-    status: 'upcoming',
-  },
-  {
-    title: 'The Lion King',
-    artist: undefined,
-    venue: 'Lyceum Theatre',
-    location: 'New York, NY',
-    date: new Date('2024-12-04T20:00:00'),
-    category: 'theater',
-    imageUrl: 'https://images.unsplash.com/photo-1503095396549-807759245b35?w=800',
-    description: 'The award-winning musical spectacular.',
-    ticketSaleDate: new Date('2024-10-01T10:00:00'),
-    presaleDate: undefined,
-    ticketUrl: undefined,
+    imageUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=1200&q=80',
+    description: 'The record-breaking Eras Tour makes its final stop at Wembley Stadium for two sold-out nights.',
+    ticketSaleDate: d(7),
+    presaleDate: d(3),
+    ticketUrl: 'https://example.com/tickets/eras-tour',
     status: 'presale',
   },
   {
-    title: 'Neon Music Festival',
-    artist: 'Multiple DJs',
-    venue: 'Central Park',
-    location: 'New York, NY',
-    date: new Date('2024-09-14T18:00:00'),
-    category: 'nightlife',
-    imageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800',
-    description: 'Electronic music under the stars.',
-    ticketSaleDate: new Date('2024-07-10T10:00:00'),
-    presaleDate: new Date('2024-07-05T10:00:00'),
-    ticketUrl: undefined,
-    status: 'upcoming',
-  },
-  {
-    title: 'Global Tech Summit 2024',
-    artist: undefined,
-    venue: 'Convention Center',
+    title: 'NBA Finals 2026 — Game 5',
+    artist: null,
+    venue: 'Chase Center',
     location: 'San Francisco, CA',
-    date: new Date('2024-10-20T09:00:00'),
-    category: 'festival',
-    imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
-    description: 'Leading tech conference and expo.',
-    ticketSaleDate: new Date('2024-09-15T10:00:00'),
-    presaleDate: undefined,
-    ticketUrl: undefined,
+    date: d(30),
+    category: 'sports',
+    imageUrl: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=1200&q=80',
+    description: 'The series returns to the Bay. Game 5 tips off at 9 PM ET.',
+    ticketSaleDate: d(2),
+    presaleDate: null,
+    ticketUrl: 'https://example.com/tickets/nba-finals',
+    status: 'onsale',
+  },
+  {
+    title: 'Hamilton',
+    artist: null,
+    venue: 'Richard Rodgers Theatre',
+    location: 'New York, NY',
+    date: d(60),
+    category: 'theater',
+    imageUrl: 'https://images.unsplash.com/photo-1503095396549-807759245b35?w=1200&q=80',
+    description: "Lin-Manuel Miranda's award-winning musical about America's founding father.",
+    ticketSaleDate: d(14),
+    presaleDate: d(10),
+    ticketUrl: 'https://example.com/tickets/hamilton',
     status: 'upcoming',
   },
   {
-    title: 'Comedy Night Downtown',
+    title: 'Dave Chappelle: Live at MSG',
     artist: 'Dave Chappelle',
-    venue: 'Main St. Theater',
-    location: 'Chicago, IL',
-    date: new Date('2024-11-05T20:00:00'),
+    venue: 'Madison Square Garden',
+    location: 'New York, NY',
+    date: d(21),
     category: 'comedy',
-    imageUrl: 'https://images.unsplash.com/photo-1585699324551-f6c309eedeca?w=800',
-    description: 'An evening of stand-up comedy.',
-    ticketSaleDate: new Date('2024-10-01T10:00:00'),
-    presaleDate: undefined,
-    ticketUrl: undefined,
+    imageUrl: 'https://images.unsplash.com/photo-1585699324551-f6c309eedeca?w=1200&q=80',
+    description: 'Three nights only. Dave Chappelle returns to MSG for an unfiltered stand-up run.',
+    ticketSaleDate: d(-2),
+    presaleDate: null,
+    ticketUrl: 'https://example.com/tickets/chappelle',
+    status: 'onsale',
+  },
+  {
+    title: 'Coachella Valley Music and Arts Festival',
+    artist: 'Various Artists',
+    venue: 'Empire Polo Club',
+    location: 'Indio, CA',
+    date: d(90),
+    category: 'festival',
+    imageUrl: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1200&q=80',
+    description: 'The world-renowned festival returns across three weekends in the California desert.',
+    ticketSaleDate: d(30),
+    presaleDate: d(25),
+    ticketUrl: 'https://example.com/tickets/coachella',
     status: 'upcoming',
   },
   {
-    title: 'Burning Man Festival',
-    artist: undefined,
-    venue: 'Black Rock Desert',
-    location: 'Nevada',
-    date: new Date('2024-08-25T12:00:00'),
-    category: 'festival',
-    imageUrl: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800',
-    description: 'Art, community, and self-expression.',
-    ticketSaleDate: new Date('2024-04-20T12:00:00'),
-    presaleDate: undefined,
-    ticketUrl: undefined,
-    status: 'soldout',
-  },
-  {
-    title: 'Ultra Miami',
-    artist: 'Multiple Artists',
-    venue: 'Bayfront Park',
-    location: 'Miami, FL',
-    date: new Date('2024-03-22T14:00:00'),
-    category: 'festival',
-    imageUrl: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800',
-    description: 'Electronic music festival on the beach.',
-    ticketSaleDate: new Date('2024-01-10T10:00:00'),
-    presaleDate: undefined,
-    ticketUrl: undefined,
+    title: 'Club Night: Solomun b2b Dixon',
+    artist: 'Solomun & Dixon',
+    venue: 'Fabric London',
+    location: 'London, UK',
+    date: d(10),
+    category: 'nightlife',
+    imageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200&q=80',
+    description: 'A rare back-to-back set from two of the biggest names in house music.',
+    ticketSaleDate: d(-5),
+    presaleDate: null,
+    ticketUrl: 'https://example.com/tickets/fabric',
     status: 'onsale',
   },
 ];
 
-function generateTicketPhases(
-  ticketSaleDate: Date | undefined,
-  presaleDate: Date | undefined
-): string {
+function generateTicketPhases(ticketSaleDate: Date | null, presaleDate: Date | null): string {
   const phases = [];
-
   if (presaleDate) {
-    phases.push({
-      name: 'Presale',
-      date: presaleDate.toISOString(),
-      status: 'upcoming',
-    });
+    phases.push({ name: 'Presale', date: presaleDate.toISOString(), status: 'upcoming' });
   }
-
   if (ticketSaleDate) {
-    phases.push({
-      name: presaleDate ? 'General Sale' : 'Sale',
-      date: ticketSaleDate.toISOString(),
-      status: 'upcoming',
-    });
+    phases.push({ name: presaleDate ? 'General Sale' : 'Sale', date: ticketSaleDate.toISOString(), status: 'upcoming' });
   }
-
   return JSON.stringify(phases.length > 0 ? phases : [{ name: 'Sale', date: new Date().toISOString(), status: 'upcoming' }]);
 }
 
 async function main() {
   try {
-    // Delete existing data in dependency-safe order
     await prisma.eventUpdate.deleteMany();
     await prisma.eventUserStatus.deleteMany();
     await prisma.reminder.deleteMany();
@@ -203,21 +116,20 @@ async function main() {
     await prisma.event.deleteMany();
     console.log('Cleared existing data');
 
-    // Create events
     for (const eventData of mockEventsData) {
       const event = await prisma.event.create({
         data: {
           title: eventData.title,
-          artist: eventData.artist || null,
+          artist: eventData.artist,
           venue: eventData.venue,
           location: eventData.location,
           date: eventData.date,
           category: eventData.category,
           imageUrl: eventData.imageUrl,
           description: eventData.description,
-          ticketSaleDate: eventData.ticketSaleDate || null,
-          presaleDate: eventData.presaleDate || null,
-          ticketUrl: eventData.ticketUrl || null,
+          ticketSaleDate: eventData.ticketSaleDate,
+          presaleDate: eventData.presaleDate,
+          ticketUrl: eventData.ticketUrl,
           status: eventData.status,
           ticketPhases: generateTicketPhases(eventData.ticketSaleDate, eventData.presaleDate),
           isUserCreated: false,
@@ -226,45 +138,37 @@ async function main() {
       console.log(`Created event: ${event.title}`);
     }
 
-    // Seed a few live updates linked to events
+    // Seed event updates
     const events = await prisma.event.findMany({ select: { id: true, title: true } });
     const byTitle = new Map(events.map((e) => [e.title, e.id]));
 
     const updates = [
       {
-        eventTitle: 'Neon Valley Festival 2024',
+        eventTitle: 'The Eras Tour — Final Leg',
         type: 'tickets',
-        title: 'Second wave pricing starts Friday',
-        description: 'Early bird tier is closed. Next wave opens this Friday.',
-        priority: 'normal',
+        title: 'Fan presale opens Thursday',
+        description: 'Verified fan presale starts Thursday at 10 AM local time. Code required.',
+        priority: 'important',
       },
       {
-        eventTitle: 'Lakers vs. Warriors',
+        eventTitle: 'NBA Finals 2026 — Game 5',
         type: 'schedule',
-        title: 'Tipoff time moved to 7:45 PM',
-        description: 'Arrive early to avoid entry queues.',
-        priority: 'important',
-      },
-      {
-        eventTitle: 'The Eras Tour',
-        type: 'logistics',
-        title: 'Bag policy reminder',
-        description: 'Only small clear bags permitted. Lockers available at Gate C.',
+        title: 'Tip-off moved to 9:30 PM ET',
+        description: 'Broadcast window pushed back 30 minutes. Gates open at 7 PM.',
         priority: 'normal',
       },
       {
-        eventTitle: 'Ultra Miami',
-        type: 'weather',
-        title: 'Heat advisory issued',
-        description: 'Hydration stations doubled across the venue. Stay cool.',
-        priority: 'important',
+        eventTitle: 'Coachella Valley Music and Arts Festival',
+        type: 'logistics',
+        title: 'Lineup announcement tomorrow',
+        description: 'Headliners to be revealed at noon PST. Check the official site.',
+        priority: 'normal',
       },
     ];
 
     for (const update of updates) {
       const eventId = byTitle.get(update.eventTitle);
       if (!eventId) continue;
-
       await prisma.eventUpdate.create({
         data: {
           eventId,
@@ -278,97 +182,72 @@ async function main() {
       console.log(`Created update for ${update.eventTitle}`);
     }
 
-    // Create a test user
+    // Test user
     const hashedPassword = await bcryptjs.hash('password123', 10);
     const user = await prisma.user.upsert({
       where: { email: 'test@example.com' },
       update: {},
       create: {
         email: 'test@example.com',
-        name: 'Test User',
+        name: 'Alex Rivera',
         hashedPassword,
       },
     });
     console.log(`Created test user: ${user.email}`);
 
-    // Create user preferences for test user
     await prisma.userPreferences.upsert({
       where: { userId: user.id },
       update: {},
       create: {
         userId: user.id,
-        preferredCategories: JSON.stringify(['concert', 'festival', 'sports']),
+        preferredCategories: JSON.stringify(['concert', 'festival']),
         emailNotifications: true,
         pushNotifications: true,
       },
     });
-    console.log(`Created preferences for ${user.email}`);
 
-    // Create reminders for test user on events with updates
-    const remindersToCreate = [
-      'Neon Valley Festival 2024',
-      'Lakers vs. Warriors',
-      'The Eras Tour',
-      'Ultra Miami',
-    ];
-
-    for (const eventTitle of remindersToCreate) {
-      const eventId = byTitle.get(eventTitle);
-      if (eventId) {
-        await prisma.reminder.create({
-          data: {
-            userId: user.id,
-            eventId,
-            intervals: JSON.stringify({
-              twoHours: true,
-              oneHour: true,
-              thirtyMinutes: false,
-              tenMinutes: false,
-            }),
-            notificationMethods: JSON.stringify({
-              browserPush: true,
-              email: false,
-            }),
-            status: 'active',
-          },
-        });
-        console.log(`Created reminder for ${user.email} on ${eventTitle}`);
-      }
+    // Reminders for two events
+    for (const title of ['The Eras Tour — Final Leg', 'Coachella Valley Music and Arts Festival']) {
+      const eventId = byTitle.get(title);
+      if (!eventId) continue;
+      await prisma.reminder.create({
+        data: {
+          userId: user.id,
+          eventId,
+          intervals: JSON.stringify({ twoHours: true, oneHour: true, thirtyMinutes: false, tenMinutes: false }),
+          notificationMethods: JSON.stringify({ browserPush: true, email: false }),
+          status: 'active',
+        },
+      });
+      console.log(`Created reminder for ${title}`);
     }
 
-    // Create event statuses for test user
-    const statusesToCreate = [
-      { eventTitle: 'Neon Valley Festival 2024', status: 'interested' as const },
-      { eventTitle: 'Lakers vs. Warriors', status: 'going' as const },
-      { eventTitle: 'The Eras Tour', status: 'secured' as const },
-      { eventTitle: 'Ultra Miami', status: 'interested' as const },
+    // Event statuses
+    const statuses: { title: string; status: 'interested' | 'going' | 'secured' }[] = [
+      { title: 'The Eras Tour — Final Leg', status: 'secured' },
+      { title: 'Coachella Valley Music and Arts Festival', status: 'interested' },
+      { title: 'NBA Finals 2026 — Game 5', status: 'going' },
     ];
 
-    for (const { eventTitle, status } of statusesToCreate) {
-      const eventId = byTitle.get(eventTitle);
-      if (eventId) {
-        await prisma.eventUserStatus.upsert({
-          where: {
-            userId_eventId: {
-              userId: user.id,
-              eventId,
-            },
-          },
-          update: {},
-          create: {
-            userId: user.id,
-            eventId,
-            status,
-            ticketsSecured: status === 'secured',
-          },
-        });
-        console.log(`Created ${status} status for ${user.email} on ${eventTitle}`);
-      }
+    for (const { title, status } of statuses) {
+      const eventId = byTitle.get(title);
+      if (!eventId) continue;
+      await prisma.eventUserStatus.upsert({
+        where: { userId_eventId: { userId: user.id, eventId } },
+        update: {},
+        create: {
+          userId: user.id,
+          eventId,
+          status,
+          ticketsSecured: status === 'secured',
+        },
+      });
+      console.log(`Set status '${status}' for ${title}`);
     }
 
-    console.log('Seeding completed successfully!');
+    console.log('\nSeeding complete!');
   } catch (error) {
-    console.error('Error seeding database:', error);
+    console.error('Seed error:', error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();

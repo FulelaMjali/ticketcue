@@ -5,16 +5,17 @@ import { z } from 'zod';
 
 const querySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(10),
+  limit: z.coerce.number().int().positive().max(100).default(12),
   category: z.string().optional(),
   search: z.string().optional(),
   status: z.string().optional(),
+  sort: z.enum(['date_asc', 'date_desc', 'created_desc']).default('date_asc'),
 });
 
 export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
-    const { page, limit, category, search, status } = querySchema.parse(
+    const { page, limit, category, search, status, sort } = querySchema.parse(
       Object.fromEntries(searchParams)
     );
 
@@ -34,12 +35,17 @@ export async function GET(req: NextRequest) {
       if (category) where.category = category;
       if (status) where.status = status;
 
+      const orderBy =
+        sort === 'date_desc' ? { date: 'desc' as const }
+        : sort === 'created_desc' ? { createdAt: 'desc' as const }
+        : { date: 'asc' as const };
+
       total = await prisma.event.count({ where });
       const rows = await prisma.event.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { date: 'asc' },
+        orderBy,
       });
 
       events = rows.map((event) => ({
