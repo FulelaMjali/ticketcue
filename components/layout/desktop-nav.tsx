@@ -2,21 +2,25 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bell, Calendar, Home, Newspaper, Settings, Ticket } from 'lucide-react';
+import { Bell, Calendar, Home, Newspaper, Settings, Ticket, Users } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import { useFriendRequests } from '@/hooks/use-friends';
 
 const navItems = [
   { href: '/', label: 'Discover', icon: Home },
   { href: '/dashboard', label: 'Dashboard', icon: Ticket },
   { href: '/reminders', label: 'My Reminders', icon: Bell },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
+  { href: '/friends', label: 'Friends', icon: Users },
 ];
 
 export function DesktopNav() {
   const pathname = usePathname();
   const { profile } = useUserProfile();
+  const { requests } = useFriendRequests();
+  const pendingCount = requests.length;
 
   const getUserInitials = () => {
     if (profile?.name) {
@@ -40,12 +44,13 @@ export function DesktopNav() {
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
+            const showBadge = item.href === '/friends' && pendingCount > 0;
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-2 px-4 py-2 rounded-lg transition-colors',
+                  'relative flex items-center gap-2 px-4 py-2 rounded-lg transition-colors',
                   isActive
                     ? 'text-primary bg-primary/10'
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
@@ -53,6 +58,9 @@ export function DesktopNav() {
               >
                 <Icon className="w-4 h-4" />
                 <span className="text-sm font-medium">{item.label}</span>
+                {showBadge && (
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
+                )}
               </Link>
             );
           })}

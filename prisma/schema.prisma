@@ -19,12 +19,14 @@ model User {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  reminders         Reminder[]
-  eventStatuses     EventUserStatus[]
-  pushSubscriptions PushSubscription[]
-  userPreferences   UserPreferences?
-  accounts          Account[]
-  sessions          Session[]
+  reminders              Reminder[]
+  eventStatuses          EventUserStatus[]
+  pushSubscriptions      PushSubscription[]
+  userPreferences        UserPreferences?
+  accounts               Account[]
+  sessions               Session[]
+  sentFriendRequests     Friendship[] @relation("FriendshipRequester")
+  receivedFriendRequests Friendship[] @relation("FriendshipAddressee")
 
   @@map("users")
 }
@@ -202,4 +204,22 @@ model WebhookEvent {
 
   @@map("webhook_events")
   @@index([externalId])
+}
+
+model Friendship {
+  id          String   @id @default(cuid())
+  requesterId String
+  addresseeId String
+  status      String   // "pending" | "accepted" | "declined"
+  color       String   // hex color e.g. "#e05c5c" — assigned at request time, used for calendar display
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  requester User @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee User @relation("FriendshipAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, addresseeId])
+  @@map("friendships")
+  @@index([requesterId])
+  @@index([addresseeId])
 }

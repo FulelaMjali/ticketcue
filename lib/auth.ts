@@ -84,8 +84,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const isLoggedIn = !!auth?.user;
       const isProtectedRoute = request.nextUrl.pathname.startsWith('/dashboard') ||
                              request.nextUrl.pathname.startsWith('/reminders') ||
+                             request.nextUrl.pathname.startsWith('/friends') ||
                              request.nextUrl.pathname.startsWith('/api/reminders') ||
-                             request.nextUrl.pathname.startsWith('/api/events/*/status');
+                             request.nextUrl.pathname.startsWith('/api/events/*/status') ||
+                             request.nextUrl.pathname.startsWith('/api/friends') ||
+                             request.nextUrl.pathname.startsWith('/api/users/search');
 
       if (isProtectedRoute && !isLoggedIn) {
         return false;

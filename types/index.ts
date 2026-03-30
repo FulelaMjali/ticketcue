@@ -1,4 +1,18 @@
 export type EventCategory = 'concert' | 'sports' | 'theater' | 'comedy' | 'festival' | 'nightlife';
+
+// ─── Social ───────────────────────────────────────────────────────────────────
+
+export type FriendshipStatus = 'pending' | 'accepted' | 'declined';
+
+export interface Friend {
+  id: string;           // friendship record id
+  userId: string;       // the other person's user id
+  name: string | null;
+  email: string;
+  color: string;        // hex color for calendar display
+  status: FriendshipStatus;
+  createdAt: string;
+}
 export type EventStatus = 'upcoming' | 'presale' | 'onsale' | 'soldout';
 export type ReminderStatus = 'active' | 'completed' | 'dismissed';
 export type ReminderSalePhase = 'presale' | 'general_sale';
